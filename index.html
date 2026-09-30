@@ -589,6 +589,22 @@ SPDX-License-Identifier: MIT
             'coffee-mocha': { backgroundOptions: { color: "#fdf8f6" }, dotsOptions: { color: "#5d4037", type: "classy" }, cornersSquareOptions: { color: "#3e2723", type: "extra-rounded" }, cornersDotOptions: { color: "#795548", type: "dot" } }
         };
 
+        // ================= UTF-8 编码修正 =================
+        // qr-code-styling 内置的 qrcode 库使用 stringToBytesFuncs.default，
+        // 它对每个字符只取 charCodeAt(i) & 0xFF（Latin-1 截断），
+        // 导致中文/emoji 等非 Latin-1 字符的高位字节被丢弃，扫码后变成乱码。
+        // 库内虽带有 UTF-8 实现（stringToBytesFuncs["UTF-8"]），但未挂到 stringToBytes 上。
+        // 这里把文本先编码为 UTF-8 字节，再让每个字符的码点低 8 位正好等于该字节，
+        // 从而使 & 0xFF 截断后的结果与标准 UTF-8 字节序列完全一致。
+        function toQrData(str) {
+            const bytes = new TextEncoder().encode(str == null ? '' : String(str));
+            let out = '';
+            for (let i = 0; i < bytes.length; i++) {
+                out += String.fromCharCode(bytes[i]);
+            }
+            return out;
+        }
+
         // ================= DOM 获取 & 初始化 =================
         let currentLang = 'zh-CN';
         const toast = document.getElementById('toast');
@@ -822,7 +838,7 @@ SPDX-License-Identifier: MIT
 
             // 【关键修复1】彻底删除了 imageOptions，防止挖空中心造成短数据变为“空壳”
             qrCodeInstance = new QRCodeStyling({
-                width: 300, height: 300, type: "svg", data: text, margin: 0,
+                width: 300, height: 300, type: "svg", data: toQrData(text), margin: 0,
                 ...themes[themeKey],
                 backgroundOptions: { ...(themes[themeKey].backgroundOptions || {}), color: exportBgColor }
             });
@@ -946,7 +962,7 @@ SPDX-License-Identifier: MIT
 
                 // 【关键修复2】批量模式启用 type: "canvas"，锁定 300x300（交由CSS缩小，无变形问题，无需重绘补 viewBox）
                 item.instance = new QRCodeStyling({
-                    width: 300, height: 300, type: "canvas", data: previewData, margin: 0,
+                    width: 300, height: 300, type: "canvas", data: toQrData(previewData), margin: 0,
                     ...themes[themeToUse],
                     backgroundOptions: { ...(themes[themeToUse].backgroundOptions || {}), color: exportBgColor }
                 });
@@ -962,7 +978,7 @@ SPDX-License-Identifier: MIT
                     item.url = e.target.value;
                     const nextPreviewData = (item.url || "").split(/\r?\n/).map(s => s.trim()).find(Boolean) || "";
                     if (item.instance && nextPreviewData) {
-                        item.instance.update({ data: nextPreviewData });
+                        item.instance.update({ data: toQrData(nextPreviewData) });
                         const canvasNode = previewContainer.querySelector('canvas');
                         if(!canvasNode) {
                              previewContainer.innerHTML = '';
@@ -1118,7 +1134,7 @@ SPDX-License-Identifier: MIT
 
                 // 【关键修复4】同样在美化模式清除挖空，并改用高分辨率 Canvas
                 item.instance = new QRCodeStyling({
-                    width: 300, height: 300, type: "canvas", data: item.decodedText, margin: 0,
+                    width: 300, height: 300, type: "canvas", data: toQrData(item.decodedText), margin: 0,
                     ...themes[itemThemeKey],
                     backgroundOptions: { ...(themes[itemThemeKey].backgroundOptions || {}), color: exportBgColor }
                 });
