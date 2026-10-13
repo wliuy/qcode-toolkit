@@ -288,7 +288,7 @@ SPDX-License-Identifier: MIT
                         </button>
                     </div>
                     <!-- 支持多行或逗号分隔 -->
-                    <textarea id="url-input" class="zen-input w-full px-4 py-2.5 rounded-md text-sm resize-none" rows="1" placeholder="请输入链接 (支持逗号批量粘贴)..." data-i18n-placeholder="url_placeholder">https://github.com/SeverinQuan</textarea>
+                    <textarea id="url-input" class="zen-input w-full px-4 py-2.5 rounded-md text-sm resize-none" rows="1" placeholder="请输入链接 (支持逗号批量粘贴)..." data-i18n-placeholder="url_placeholder">https://www.89729981.xyz/</textarea>
                 </div>
 
                 <div class="w-full mb-6 relative z-20 text-left">
@@ -634,6 +634,26 @@ SPDX-License-Identifier: MIT
             });
         }
         populateSelects();
+
+        // 鼠标滚轮切换配色方案
+        function setupThemeWheelSelect() {
+            const sels = [
+                document.getElementById('theme-select'),
+                document.getElementById('beautify-theme-select')
+            ];
+            sels.forEach(sel => {
+                if (!sel) return;
+                sel.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const len = sel.options.length;
+                    if (len === 0) return;
+                    const dir = e.deltaY > 0 ? 1 : -1;
+                    sel.selectedIndex = (sel.selectedIndex + dir + len) % len;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }, { passive: false });
+            });
+        }
+        setupThemeWheelSelect();
 
         function getThemeOptionsHtml(selectedVal) {
             let html = '';
